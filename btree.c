@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "btree.h"
 #include "keyoffset.h"
@@ -15,6 +16,19 @@ enum {
 };
 
 /* BEGIN AUX */
+
+short read_rec(char *recbuff, FILE *fd) {
+    short rec_lgth;
+
+    if (fread(&rec_lgth, sizeof(rec_lgth), 1, fd) == 0) {
+        return 0;
+    }
+
+    rec_lgth = fread(recbuff, sizeof(char), rec_lgth, fd);
+    recbuff[rec_lgth] = '\0';
+
+    return rec_lgth;
+}
 
 void read_page(int rrn, FILE *file, Page *page) {
     fseek(file, sizeof(int), SEEK_SET);
@@ -50,7 +64,7 @@ Bool search_in_page(int key, Page page, int *pos) {
     }
 }
 
-void insert_in_page(KeyOffset keyoffset, int adj_r, Page *page) {
+void insert_in_page(Keyoffset keyoffset, int adj_r, Page *page) {
     int i = page->qtd_keys;
     while (i > 0 && keyoffset.key < page->keyoffsets[i - 1].key) {
         page->keyoffsets[i] = page->keyoffsets[i - 1];
@@ -71,7 +85,7 @@ int rrn_new_page(FILE *file) {
     return (offset - size_header) / size_page;
 }
 
-void divide(KeyOffset keyoffset, int adj_r, Page *page, KeyOffset *keyoffset_pro, int *adj_r_pro, Page *new_page,
+void divide(Keyoffset keyoffset, int adj_r, Page *page, Keyoffset *keyoffset_pro, int *adj_r_pro, Page *new_page,
             FILE *file) {
     Page_Aux page_aux;
     int i = 0;
@@ -150,12 +164,12 @@ Bool search(int rrn, int key, int *rrn_found, int *pos_found, FILE *file) {
     }
 }
 
-int insert(int rrn_curr, KeyOffset keyoffset, int *adj_r_pro, KeyOffset *keyoffset_pro, FILE *file) {
+int insert(int rrn_curr, Keyoffset keyoffset, int *adj_r_pro, Keyoffset *keyoffset_pro, FILE *file) {
     Page page, new_page;
     init_page(&page);
     init_page(&new_page);
     int pos, rrn_pro = *adj_r_pro;
-    KeyOffset _keyoffset_pro = *keyoffset_pro;
+    Keyoffset _keyoffset_pro = *keyoffset_pro;
     Bool is_found;
 
     if (rrn_curr == -1) {
@@ -189,7 +203,7 @@ int insert(int rrn_curr, KeyOffset keyoffset, int *adj_r_pro, KeyOffset *keyoffs
 
 /* END OPERATIONS */
 
-Bool create_btree(KeyOffset *keyoffset, int qtd) {
+Bool create_btree(Keyoffset *keyoffsets, int qtd) {
     FILE *btree = fopen("btree.dat", "w+b");
     int root = 0;
     Page new_page;
@@ -199,11 +213,11 @@ Bool create_btree(KeyOffset *keyoffset, int qtd) {
     write_page(rrn_new_page(btree), new_page, btree);
 
     int adj_r_pro = -1;
-    KeyOffset keyoffset_pro;
+    Keyoffset keyoffset_pro;
     int rrn_page;
     for (int i = 0; i < qtd; ++i) {
-        printf("Insercao da chave %d\n", keyoffset[i].key);
-        if (insert(root, keyoffset[i], &adj_r_pro, &keyoffset_pro, btree) == PROMOTION) {
+        printf("Insercao da chave %d\n", keyoffsets[i].key);
+        if (insert(root, keyoffsets[i], &adj_r_pro, &keyoffset_pro, btree) == PROMOTION) {
             init_page(&new_page);
             new_page.keyoffsets[0] = keyoffset_pro;
             new_page.adjs[0] = root;
@@ -225,6 +239,9 @@ Bool search_btree(int key) {
     FILE *btree = fopen("btree.dat", "rb");
     int root = -1, rrn_found = -1, pos_found = -1;
     Page page;
+    int offset_found = -1;
+    short reg_size = 0;
+    char reg[500];
 
     if (btree != NULL) {
         fclose(btree);
@@ -234,13 +251,65 @@ Bool search_btree(int key) {
         if (search(root, key, &rrn_found, &pos_found, btree)) {
             read_page(rrn_found, btree, &page);
 
-            //TODO buscar o registro em daodos.dat e exibir
+            offset_found = page.keyoffsets[pos_found].offset;
+            FILE *file = fopen("dados.dat", "rb");
+
+            fseek(file, offset_found, SEEK_SET);
+            reg_size = read_rec(reg, file);
+
+            printf("%s (%d bytes)\n", reg, reg_size);
 
             return true;
         }
 
-        printf("Registro com chave %d nao encontrado\n", key);
-        return false;
+        printf("Registro com chave %d nao encontrado\n", key, reg_size);
+    }
+
+    return false;
+}
+
+Bool insert_btree(char *reg, short reg_size) {
+    FILE *btree = fopen("btree.dat", "r+b"), *data = fopen("dados.dat", "r+b");
+    int root = -1, avaliable_offset = -1;
+    Page new_page;
+
+    if (btree != NULL && data != NULL) {
+        fseek(data, 0, SEEK_END);
+
+        avaliable_offset = ftell(data);
+
+        fwrite(&reg_size, sizeof(reg_size), 1, data);
+        fwrite(reg, reg_size * sizeof(char), 1, data);
+
+        fseek(btree, 0, SEEK_SET);
+        fread(&root, sizeof(root), 1, btree);
+        init_page(&new_page);
+
+        Keyoffset keyoffset;
+        keyoffset.key = atoi(strtok(reg, "|"));
+        keyoffset.offset = avaliable_offset;
+
+        int adj_r_pro = -1;
+        Keyoffset keyoffset_pro;
+        int rrn_page;
+        printf("Insercao da chave %d\n", keyoffset.key);
+        if (insert(root, keyoffset, &adj_r_pro, &keyoffset_pro, btree) == PROMOTION) {
+            init_page(&new_page);
+            new_page.keyoffsets[0] = keyoffset_pro;
+            new_page.adjs[0] = root;
+            new_page.adjs[1] = adj_r_pro;
+            rrn_page = rrn_new_page(btree);
+            write_page(rrn_page, new_page, btree);
+            root = rrn_page;
+        }
+
+        printf("Insercao do registro de chave \"%s\" (%d bytes)\n", strtok(reg, "|"),
+               reg_size);
+
+        fclose(btree);
+        fclose(data);
+
+        return true;
     }
 
     return false;

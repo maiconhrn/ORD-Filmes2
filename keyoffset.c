@@ -7,7 +7,7 @@
 
 #include "keyoffset.h"
 
-void init_keyoffset(KeyOffset *keyOffset) {
+void init_keyoffset(Keyoffset *keyOffset) {
     keyOffset->key = -1;
     keyOffset->offset = -1;
 }

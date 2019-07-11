@@ -9,19 +9,6 @@
 #include "btree.h"
 #include "keyoffset.h"
 
-short read_rec(char *recbuff, FILE *fd) {
-    short rec_lgth;
-
-    if (fread(&rec_lgth, sizeof(rec_lgth), 1, fd) == 0) {
-        return 0;
-    }
-
-    rec_lgth = fread(recbuff, sizeof(char), rec_lgth, fd);
-    recbuff[rec_lgth] = '\0';
-
-    return rec_lgth;
-}
-
 Bool convert_to_btree(char *source_fname) {
     FILE *fsource = fopen(source_fname, "rb");
     int qtd_reg = 0, reg_offset = sizeof(int), reg_key;
@@ -30,7 +17,7 @@ Bool convert_to_btree(char *source_fname) {
 
     if (fsource != NULL) {
         fread(&qtd_reg, sizeof(qtd_reg), 1, fsource);
-        KeyOffset keyOffsetArr[qtd_reg];
+        Keyoffset keyOffsetArr[qtd_reg];
 
         for (int i = 0; i < qtd_reg; ++i) {
             reg_size = read_rec(reg, fsource);
@@ -53,7 +40,7 @@ Bool convert_to_btree(char *source_fname) {
 void perform_operation(char *fname) {
     FILE *operations = fopen(fname, "r");
     char line[500], *operation, *reg;
-    int key;
+    int key, reg_size = 0;
 
     while (fgets(line, 499, operations) != NULL) {
         operation = strtok(line, " \n");
@@ -66,7 +53,8 @@ void perform_operation(char *fname) {
                 break;
             case 2:
                 reg = strtok(NULL, "\n");
-
+                reg_size = strlen(reg);
+                insert_btree(reg, reg_size);
                 break;
             default:
                 break;

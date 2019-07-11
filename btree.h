@@ -12,18 +12,22 @@
 
 typedef struct {
     int qtd_keys;
-    KeyOffset keyoffsets[MAX_KEYS];
+    Keyoffset keyoffsets[MAX_KEYS];
     int adjs[MAX_KEYS + 1];
 } Page;
 
 typedef struct {
     int qtd_keys;
-    KeyOffset keyoffsets[MAX_KEYS + 1];
+    Keyoffset keyoffsets[MAX_KEYS + 1];
     int adjs[MAX_KEYS + 2];
 } Page_Aux;
 
-Bool create_btree(KeyOffset *keyoffset, int qtd);
+short read_rec(char *recbuff, FILE *fd);
+
+Bool create_btree(Keyoffset *keyoffsets, int qtd);
 
 Bool search_btree(int key);
+
+Bool insert_btree(char *reg, short reg_size);
 
 #endif //TRABALHO2_BTREE_H

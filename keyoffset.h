@@ -10,8 +10,8 @@
 typedef struct {
     int key;
     int offset;
-} KeyOffset;
+} Keyoffset;
 
-void init_keyoffset(KeyOffset *keyOffset);
+void init_keyoffset(Keyoffset *keyOffset);
 
 #endif //FILMES_KEYOFFSET_H
