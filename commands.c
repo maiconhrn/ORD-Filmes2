@@ -67,7 +67,24 @@ void perform_operation(char *fname) {
     fclose(operations);
 }
 
-void print_btree(char *source_fname) {
+void print(char *source_fname) {
+    FILE *btree = fopen(source_fname, "rb");
 
+    if (btree != NULL) {
+        int root = -1;
 
+        fread(&root, sizeof(root), 1, btree);
+
+        fseek(btree, 0, SEEK_END);
+        int btree_size = ftell(btree) - sizeof(int);
+        int qtd_pages = btree_size / sizeof(Page);
+
+        print_btree(btree, root, qtd_pages);
+
+        fclose(btree);
+
+        return;
+    }
+
+    printf("Arquivo de dados não encontrado!\n");
 }

@@ -30,4 +30,6 @@ Bool search_btree(int key);
 
 Bool insert_btree(char *reg, short reg_size);
 
+void print_btree(FILE *btree, int root, int qtd_pages);
+
 #endif //TRABALHO2_BTREE_H

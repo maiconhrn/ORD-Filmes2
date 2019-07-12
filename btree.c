@@ -323,3 +323,44 @@ Bool insert_btree(char *reg, short reg_size) {
 
     return false;
 }
+
+void print_btree(FILE *btree, int root, int qtd_pages) {
+    Page pages[qtd_pages];
+
+    fseek(btree, sizeof(int), SEEK_SET);
+    fread(pages, sizeof(Page), qtd_pages, btree);
+
+    int i = 0, j = 0;
+
+    for (i = 0; i < qtd_pages; ++i) {
+        if (i == root) {
+            printf(" - - - - - - Pagina Raiz - - - - - - \n");
+        }
+
+        printf("Pagina %d\n", i);
+
+        printf("Chaves: ");
+        for (j = 0; j < pages[i].qtd_keys - 1; ++j) {
+            printf("%d | ", pages[i].keyoffsets[j].key);
+        }
+        printf("%d\n", pages[i].keyoffsets[j].key);
+
+        printf("Offsets: ");
+        for (j = 0; j < pages[i].qtd_keys - 1; ++j) {
+            printf("%d | ", pages[i].keyoffsets[j].offset);
+        }
+        printf("%d\n", pages[i].keyoffsets[j].offset);
+
+        printf("Filhos: ");
+        for (j = 0; j < pages[i].qtd_keys; ++j) {
+            printf("%d | ", pages[i].adjs[j]);
+        }
+        printf("%d\n", pages[i].adjs[j]);
+
+        if (i == root) {
+            printf(" - - - - - - - - - - - - - - - - - - \n");
+        }
+
+        printf("\n");
+    }
+}

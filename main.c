@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
         perform_operation(argv[2]);
     } else if (strcmp(argv[1], "-p") == 0) {
         printf("Modo de execucao de impressao de arvore-b ativado ... nome do arquivo = %s\n", "btree.dat");
-        print_btree("btree.dat");
+        print("btree.dat");
     } else {
         fprintf(stderr, "Opcao \"%s\" nao suportada!\n", argv[1]);
     }

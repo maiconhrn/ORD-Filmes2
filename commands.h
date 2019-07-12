@@ -11,6 +11,6 @@ Bool convert_to_btree(char *source_fname);
 
 void perform_operation(char *fname);
 
-void print_btree(char *source_fname);
+void print(char *source_fname);
 
 #endif //TRABALHO2_COMMANDS_H
