@@ -219,6 +219,7 @@ Bool create_btree(Keyoffset *keyoffsets, int qtd) {
         printf("Insercao da chave %d\n", keyoffsets[i].key);
         if (insert(root, keyoffsets[i], &adj_r_pro, &keyoffset_pro, btree) == PROMOTION) {
             init_page(&new_page);
+            new_page.qtd_keys = 1;
             new_page.keyoffsets[0] = keyoffset_pro;
             new_page.adjs[0] = root;
             new_page.adjs[1] = adj_r_pro;
@@ -244,8 +245,6 @@ Bool search_btree(int key) {
     char reg[500];
 
     if (btree != NULL) {
-        fclose(btree);
-        btree = fopen("btree.dat", "r+b");
         fread(&root, sizeof(int), 1, btree);
 
         if (search(root, key, &rrn_found, &pos_found, btree)) {
@@ -259,10 +258,14 @@ Bool search_btree(int key) {
 
             printf("%s (%d bytes)\n", reg, reg_size);
 
+            fclose(btree);
+
             return true;
         }
 
-        printf("Registro com chave %d nao encontrado\n", key, reg_size);
+        printf("Registro com chave %d nao encontrado\n", key);
+
+        fclose(btree);
     }
 
     return false;
@@ -270,10 +273,15 @@ Bool search_btree(int key) {
 
 Bool insert_btree(char *reg, short reg_size) {
     FILE *btree = fopen("btree.dat", "r+b"), *data = fopen("dados.dat", "r+b");
-    int root = -1, avaliable_offset = -1;
+    int root = -1, avaliable_offset = -1, reg_qtd = 0;
     Page new_page;
 
     if (btree != NULL && data != NULL) {
+        fread(&reg_qtd, sizeof(reg_qtd), 1, data);
+        reg_qtd++;
+        fseek(data, 0, SEEK_SET);
+        fwrite(&reg_qtd, sizeof(reg_qtd), 1, data);
+
         fseek(data, 0, SEEK_END);
 
         avaliable_offset = ftell(data);
@@ -295,6 +303,7 @@ Bool insert_btree(char *reg, short reg_size) {
         printf("Insercao da chave %d\n", keyoffset.key);
         if (insert(root, keyoffset, &adj_r_pro, &keyoffset_pro, btree) == PROMOTION) {
             init_page(&new_page);
+            new_page.qtd_keys = 1;
             new_page.keyoffsets[0] = keyoffset_pro;
             new_page.adjs[0] = root;
             new_page.adjs[1] = adj_r_pro;
@@ -303,8 +312,8 @@ Bool insert_btree(char *reg, short reg_size) {
             root = rrn_page;
         }
 
-        printf("Insercao do registro de chave \"%s\" (%d bytes)\n", strtok(reg, "|"),
-               reg_size);
+        fseek(btree, 0, SEEK_SET);
+        fwrite(&root, sizeof(root), 1, btree);
 
         fclose(btree);
         fclose(data);

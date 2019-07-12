@@ -39,7 +39,7 @@ Bool convert_to_btree(char *source_fname) {
 
 void perform_operation(char *fname) {
     FILE *operations = fopen(fname, "r");
-    char line[500], *operation, *reg;
+    char line[500], *operation, *reg, reg_aux[500];
     int key, reg_size = 0;
 
     while (fgets(line, 499, operations) != NULL) {
@@ -54,6 +54,9 @@ void perform_operation(char *fname) {
             case 2:
                 reg = strtok(NULL, "\n");
                 reg_size = strlen(reg);
+                strcpy(reg_aux, reg);
+                printf("Insercao do registro de chave \"%s\" (%d bytes)\n", strtok(reg_aux, "|"),
+                       reg_size);
                 insert_btree(reg, reg_size);
                 break;
             default:
@@ -62,4 +65,9 @@ void perform_operation(char *fname) {
     }
 
     fclose(operations);
+}
+
+void print_btree(char *source_fname) {
+
+
 }
